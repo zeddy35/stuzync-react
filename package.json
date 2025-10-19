@@ -1,0 +1,45 @@
+{
+  "name": "stuzync",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3001",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@aws-sdk/client-rekognition": "^3.911.0",
+    "@aws-sdk/client-s3": "^3.913.0",
+    "bcrypt": "^6.0.0",
+    "formidable": "^3.5.4",
+    "mongoose": "^8.19.1",
+    "next": "15.5.6",
+    "next-auth": "4.24.11",
+    "nodemailer": "6.10.1",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "zxcvbn": "^4.4.2"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/forms": "^0.5.10",
+    "@tailwindcss/typography": "^0.5.16",
+    "@types/bcrypt": "^6.0.0",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/zxcvbn": "^4.4.5",
+    "autoprefixer": "^10.4.21",
+    "eslint": "^9",
+    "eslint-config-next": "15.5.6",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5"
+  },
+  "optionalDependencies": {
+    "@tensorflow/tfjs-node": "^4.22.0",
+    "nsfwjs": "^4.2.0",
+    "canvas": "^2.11.2"
+  }
+}
