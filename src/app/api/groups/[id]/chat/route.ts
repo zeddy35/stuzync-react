@@ -1,4 +1,4 @@
-﻿// src/app/api/groups/[id]/chat/route.ts
+﻿﻿// src/app/api/groups/[id]/chat/route.ts
 export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from "next/server";
@@ -32,7 +32,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
     // Üyelik kontrolü
     const me = (session as any).user.id as string;
-    const isMember = await GroupMembership.exists({ group: groupId, user: me });
+    const isMember = await ensureMember(me, groupId, async (f)=> GroupMembership.exists(f) as any);
     if (!isMember) return NextResponse.json({ ok: false, mesaj: "Bu gruba erisim yetkiniz yok" }, { status: 403 });
 
     // Pagination
@@ -98,7 +98,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
     // Üyelik kontrolü
     const me = (session as any).user.id as string;
-    const isMember = await GroupMembership.exists({ group: groupId, user: me });
+    const isMember = await ensureMember(me, groupId, async (f)=> GroupMembership.exists(f) as any);
     if (!isMember) return NextResponse.json({ ok: false, mesaj: "Bu gruba erisim yetkiniz yok" }, { status: 403 });
 
     // Mesajı yaz
