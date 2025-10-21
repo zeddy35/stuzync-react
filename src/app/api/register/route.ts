@@ -1,35 +1,18 @@
 export const runtime = "nodejs";
 
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcrypt";
+import crypto from "node:crypto";
 import { dbConnect } from "@/lib/db";
 import User from "@/models/User";
-// import { sendVerifyEmail } from "@/lib/email"; // hazır olduğunda açarsın
+import { sendVerificationEmail } from "@/lib/email";
 
-function splitName(full: string) {
-  const n = (full || "").trim().replace(/\s+/g, " ");
-  if (!n) return { firstName: "", lastName: "" };
-  const parts = n.split(" ");
-  const firstName = parts[0] || "";
-  const lastName = parts.slice(1).join(" ") || "";
-  return { firstName, lastName };
-}
-
-async function readRegisterInput(req: NextRequest) {
+async function readForm(req: NextRequest) {
   const ct = req.headers.get("content-type") || "";
-  // JSON
   if (ct.includes("application/json")) {
-    const body = await req.json().catch(() => ({}));
-    return {
-      name: body.name ?? "",
-      email: body.email ?? "",
-      school: body.school ?? "",
-      phone: body.phone ?? "",
-      password: body.password ?? "",
-      kvkk: !!body.kvkk,
-    };
+    const b = await req.json().catch(() => ({}));
+    return { name: b.name || "", email: b.email || "", school: b.school || "", phone: b.phone || "", password: b.password || "" };
   }
-  // Form (x-www-form-urlencoded / multipart)
   const form = await req.formData();
   return {
     name: String(form.get("name") || ""),
@@ -37,77 +20,43 @@ async function readRegisterInput(req: NextRequest) {
     school: String(form.get("school") || ""),
     phone: String(form.get("phone") || ""),
     password: String(form.get("password") || ""),
-    kvkk: String(form.get("kvkk") || "") === "on" || String(form.get("kvkk") || "") === "true",
   };
-}
-
-export async function GET() {
-  // Bu endpoint sadece POST kabul ediyor
-  return new Response("Method Not Allowed", { status: 405 });
 }
 
 export async function POST(req: NextRequest) {
   try {
-    // ENV kontrolü (hata sebebi olmasın)
-    if (!process.env.MONGODB_URI) {
-      return new Response("MONGODB_URI missing", { status: 500 });
-    }
-
     await dbConnect();
+    const { name, email, school, phone, password } = await readForm(req);
+    if (!name || !email || !password) return NextResponse.json({ ok: false, mesaj: "Ad, e-posta ve şifre zorunludur" }, { status: 400 });
 
-    const { name, email, school, phone, password, kvkk } = await readRegisterInput(req);
-
-    // Basit doğrulamalar
-    if (!name || !email) {
-      return new Response("name & email required", { status: 400 });
-    }
-    if (!kvkk) {
-      return new Response("KVKK consent required", { status: 400 });
-    }
-
-    // Email tekil mi?
     const exists = await User.findOne({ email: email.toLowerCase().trim() }).select("_id").lean();
-    if (exists) {
-      return new Response("Email already registered", { status: 409 });
-    }
+    if (exists) return NextResponse.json({ ok: false, mesaj: "Bu e-posta zaten kayıtlı" }, { status: 409 });
 
-    const { firstName, lastName } = splitName(name);
+    const [firstName, ...rest] = name.trim().split(/\s+/);
+    const lastName = rest.join(" ");
+    const hashed = await bcrypt.hash(password, 10);
+    const verifyToken = crypto.randomBytes(24).toString("hex");
 
-    // Parola opsiyonel (OAuth kullanıcıları için); varsa hash’le
-    let hashed: string | undefined = undefined;
-    if (password) {
-      if (password.length < 8) {
-        return new Response("Password must be at least 8 characters", { status: 400 });
-      }
-      hashed = await bcrypt.hash(password, 10);
-    }
-
-    // Verify token (email doğrulama akışı istersen)
-    // const verifyToken = crypto.randomBytes(24).toString("hex");
-
-    const doc = await User.create({
-      firstName,
+    await User.create({
+      firstName: firstName || "",
       lastName,
       email: email.toLowerCase().trim(),
       phone: phone || undefined,
       password: hashed,
       school: school || undefined,
       isVerified: false,
-      mustCompleteProfile: true,
+      verifyToken,
       roles: ["user"],
-      // verifyToken,
+      mustCompleteProfile: true,
     });
 
-    // E-posta doğrulama (hazır olduğunda aç)
-    // await sendVerifyEmail(doc.email, verifyToken);
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || "http://localhost:3000";
+    const link = `${appUrl}/api/register/verify?token=${verifyToken}`;
+    await sendVerificationEmail(email, link);
 
-    return Response.json({ ok: true, userId: String(doc._id) }, { status: 201 });
-  } catch (err: any) {
-    // Unique index hataları için güzel mesaj
-    if (err?.code === 11000) {
-      return new Response("Duplicate key", { status: 409 });
-    }
-    console.error("REGISTER_ERROR:", err);
-    return new Response("Internal Server Error", { status: 500 });
+    return NextResponse.json({ ok: true, mesaj: "Kayıt oluşturuldu. Lütfen e-postanızı doğrulayın." });
+  } catch (e) {
+    console.error("REGISTER_ERROR", e);
+    return NextResponse.json({ ok: false, mesaj: "Sunucu hatası" }, { status: 500 });
   }
 }

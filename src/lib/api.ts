@@ -24,3 +24,10 @@ export async function apiPost(path: string, body: any, init: RequestInit = {}) {
     cache: 'no-store',
   });
 }
+
+export async function serverJson<T = any>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(path, { ...init, cache: "no-store" });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+

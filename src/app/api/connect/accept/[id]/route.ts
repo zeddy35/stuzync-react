@@ -2,6 +2,7 @@ import { dbConnect } from "@/lib/db";
 import User from "@/models/User";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import Notification from "@/models/Notification";
 
 export async function POST(_req: Request, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -17,5 +18,6 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
 
   await User.findByIdAndUpdate(meId, { $addToSet: { friends: requesterId }, $pull: { friendRequestsReceived: requesterId } });
   await User.findByIdAndUpdate(requesterId, { $addToSet: { friends: meId }, $pull: { friendRequestsSent: meId } });
+  try { await Notification.create({ user: requesterId as any, actor: meId as any, type: "zync" }); } catch {}
   return Response.json({ ok: true });
 }

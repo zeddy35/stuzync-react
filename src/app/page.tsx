@@ -1,46 +1,43 @@
-﻿// src/app/page.tsx
-export const dynamic = "force-dynamic";
+// app/(marketing)/landing/page.tsx or wherever you render it
+"use client";
+import OAuthButtons from "@/components/OAuthButtons";
+import { useSearchParams } from "next/navigation";
 
-export default function HomePage() {
+export default function Landing() {
+  const sp = useSearchParams();
+  const next = sp.get("next") || "/feed";
+
   return (
-    <main className="page-wrap mt-10">
-      <div className="section-card max-w-4xl mx-auto">
-        <h1 className="text-3xl md:text-4xl font-bold">StuZync</h1>
-        <p className="mt-2 text-neutral-600 dark:text-neutral-300 max-w-2xl">
-          Birlikte çalış, akıllıca senkronize ol. Basit ve hızlı bir işbirliği deneyimi.
-        </p>
+    <main className="min-h-screen grid lg:grid-cols-2">
+      {/* Left: hero */}
+      <section className="flex items-center justify-center ">
+        <img
+          src="/images/StuZync_Favicon.png"
+          alt="StuZync"
+          width={800}
+          height={800}
+          className="block w-[40vw] max-w-[800px] h-auto"
+        />
+      </section>
 
-        <div className="mt-6 flex gap-3">
-          <a className="btn btn-primary" href="/register">Hemen Başla</a>
-          <a className="btn btn-ghost" href="/login">Giriş Yap</a>
+      {/* Right: auth panel */}
+      <section className="flex items-center justify-center ">
+        <div className="w-full max-w-sm space-y-6">
+          <h1 className="text-3xl font-extrabold">Aradığın notlar burada</h1>
+          <p className="text-neutral-500">Hemen katıl.</p>
+          <OAuthButtons callbackUrl={next} />
+          <div className="my-2 flex items-center gap-3 text-xs text-neutral-500">
+            <div className="flex-1 h-px bg-neutral-200/80 dark:bg-white/10" />
+            <span>veya</span>
+            <div className="flex-1 h-px bg-neutral-200/80 dark:bg-white/10" />
+          </div>
+          <a href="/register" className="btn btn-primary w-full">Hesap oluştur</a>
+          <div className="pt-2">
+            <p className="text-neutral-500 text-sm">Zaten bir hesabın var mı?</p>
+            <a href="/login" className="btn btn-ghost w-full">Giriş yap</a>
+          </div>
         </div>
-      </div>
-
-      <div className="grid md:grid-cols-3 gap-4 mt-8">
-        <section className="section-card">
-          <h2 className="text-xl font-semibold">Biz Kimiz?</h2>
-          <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">
-            Öğrenciler ve ekipler için pratik üretkenlik araçları geliştiriyoruz. Odak: sade deneyim.
-          </p>
-          <a className="btn btn-ghost mt-3" href="#about">Daha fazla oku</a>
-        </section>
-
-        <section className="section-card">
-          <h2 className="text-xl font-semibold">Blog</h2>
-          <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">
-            Ürün güncellemeleri, ipuçları ve vaka çalışmaları. Yakında.
-          </p>
-          <a className="btn btn-ghost mt-3" href="#blog">Bloga git</a>
-        </section>
-
-        <section className="section-card">
-          <h2 className="text-xl font-semibold">Dokümanlar</h2>
-          <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">
-            API ve entegrasyonlar için hızlı dokümantasyon. Yakında.
-          </p>
-          <a className="btn btn-ghost mt-3" href="#docs">Dokümanları aç</a>
-        </section>
-      </div>
+      </section>
     </main>
   );
 }

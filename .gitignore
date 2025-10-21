@@ -39,3 +39,37 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# IDE/editor
+.idea/
+.vscode/
+.history/
+
+# OS junk
+Thumbs.db
+ehthumbs.db
+.Spotlight-V100
+.Trashes
+
+# Build caches
+.turbo/
+.swc/
+.cache/
+.parcel-cache/
+.eslintcache
+
+# Monorepo subprojects
+server-uploader/node_modules/
+server-uploader/dist/
+server-uploader/coverage/
+server-uploader/.env*
+
+# Package managers
+.pnpm-store/
+yarn-error.log*
+pnpm-debug.log*
+
+# Local data/uploads
+public/uploads/
+tmp/
+temp/

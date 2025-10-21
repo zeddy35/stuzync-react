@@ -1,32 +1,33 @@
-// src/app/api/upload/banner/route.ts
 export const runtime = "nodejs";
 
+import { NextResponse } from "next/server"; // Türkçe: JSON yanıtlarda NextResponse kullanıyoruz.
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { dbConnect } from "@/lib/db";
 import User from "@/models/User";
 import { fileFromForm } from "@/lib/upload";
-// import { r2DeleteObject } from "@/lib/r2"; // eski banner key silmek istersen ekleyebilirsin
 
+// Türkçe: Banner yükleme ucu (FormData "file").
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
-  if (!session?.user) return new Response("Unauthorized", { status: 401 });
+  if (!session?.user) return NextResponse.json({ ok: false, mesaj: "Yetkisiz erişim" }, { status: 401 });
 
   await dbConnect();
 
-  const form = await req.formData();
-  const uploaded = await fileFromForm(form, "file", {
-    prefix: "banners",
-    allow: ["image/"],
-    maxSizeMB: 10,
-  });
+  try {
+    const form = await req.formData();
+    const uploaded = await fileFromForm(form, "file", { prefix: "banners", allow: ["image/"], maxSizeMB: 10 });
+    if (!uploaded) return NextResponse.json({ ok: false, mesaj: "Dosya bulunamadı" }, { status: 400 });
 
-  if (!uploaded) return new Response("No file", { status: 400 });
+    await User.findByIdAndUpdate((session as any).user.id, {
+      profileBanner: uploaded.url,
+    });
 
-  await User.findByIdAndUpdate((session as any).user.id, {
-    profileBanner: uploaded.url,
-    // profileBannerKey: uploaded.key,
-  });
-
-  return Response.json({ ok: true, url: uploaded.url });
+    return NextResponse.json({ ok: true, url: uploaded.url });
+  } catch (e: any) {
+    const msg = String(e?.message || e || "Yükleme başarısız");
+    if (msg.includes("R2 env")) return NextResponse.json({ ok: false, mesaj: "R2 yapılandırılmamış" }, { status: 400 });
+    return NextResponse.json({ ok: false, mesaj: msg }, { status: 500 });
+  }
 }
+

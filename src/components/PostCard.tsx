@@ -24,7 +24,7 @@ export default function PostCard({
         <img
           src={
             post.author?.profilePic ||
-            "/images/avatar-fallback.png"
+            "/images/avatar-fallback.svg"
           }
           className="w-10 h-10 rounded-full object-cover ring-elevated"
           alt={post.author?.name ?? "User"}

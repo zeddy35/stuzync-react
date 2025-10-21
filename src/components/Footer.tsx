@@ -11,7 +11,7 @@ export default function Footer() {
         </div>
         <div className="space-y-1 text-neutral-500">
           <a href="#blog">Blog</a><br />
-          <a href="#docs">Dokumanlar</a>
+          <a href="#docs">Dokümanlar</a>
         </div>
         <div className="space-y-1 text-neutral-500">
           <a href="#about">Hakkımızda</a><br />

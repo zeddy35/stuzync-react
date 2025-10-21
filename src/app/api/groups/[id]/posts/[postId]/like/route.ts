@@ -1,45 +1,33 @@
-// src/app/groups/[id]/posts/[postId]/like/route.ts
-export const runtime = "nodejs";
-
-import { NextRequest } from "next/server";
-import mongoose from "mongoose";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { dbConnect } from "@/lib/db";
-import GroupMembership from "@/models/GroupMembership";
 import GroupPost from "@/models/GroupPost";
+import GroupMembership from "@/models/GroupMembership";
+import mongoose from "mongoose";
 
-export async function POST(
-  _req: NextRequest,
-  { params }: { params: { id: string; postId: string } }
-) {
-  await dbConnect();
+export async function POST(_req: Request, { params }: { params: { id: string; postId: string } }) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return new Response("Unauthorized", { status: 401 });
-
-  const { id, postId } = params;
-  if (!mongoose.isValidObjectId(id) || !mongoose.isValidObjectId(postId)) {
-    return new Response("Invalid id", { status: 400 });
-  }
-
-  const isMember = await GroupMembership.exists({
-    group: id,
-    user: (session as any).user.id,
-  });
-  if (!isMember) return new Response("Forbidden", { status: 403 });
-
-  const me = new mongoose.Types.ObjectId((session as any).user.id);
-  const post = await GroupPost.findById(postId);
-  if (!post || String(post.group) !== id) return new Response("Not found", { status: 404 });
-
-  // ✅ tell TS what 'u' is
-  const liked = post.likes.some((u: mongoose.Types.ObjectId) => String(u) === String(me));
-
-  await GroupPost.updateOne(
-    { _id: postId },
-    liked ? { $pull: { likes: me } } : { $addToSet: { likes: me } }
-  );
-
-  const updated = await GroupPost.findById(postId).select("likes").lean<{ likes: mongoose.Types.ObjectId[] } | null>();
-  return Response.json({ ok: true, liked: !liked, likes: updated?.likes?.length ?? 0 });
+  await dbConnect();
+  if (!mongoose.isValidObjectId(params.id) || !mongoose.isValidObjectId(params.postId)) return new Response("Bad id", { status: 400 });
+  const me = (session as any).user.id;
+  const member = await GroupMembership.exists({ group: params.id, user: me });
+  if (!member) return new Response("Forbidden", { status: 403 });
+  const post = await GroupPost.findByIdAndUpdate(params.postId, { $addToSet: { likes: me } }, { new: true }).select("likes");
+  if (!post) return new Response("Not found", { status: 404 });
+  return Response.json({ liked: true, likes: post.likes.length });
 }
+
+export async function DELETE(_req: Request, { params }: { params: { id: string; postId: string } }) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) return new Response("Unauthorized", { status: 401 });
+  await dbConnect();
+  if (!mongoose.isValidObjectId(params.id) || !mongoose.isValidObjectId(params.postId)) return new Response("Bad id", { status: 400 });
+  const me = (session as any).user.id;
+  const member = await GroupMembership.exists({ group: params.id, user: me });
+  if (!member) return new Response("Forbidden", { status: 403 });
+  const post = await GroupPost.findByIdAndUpdate(params.postId, { $pull: { likes: me } }, { new: true }).select("likes");
+  if (!post) return new Response("Not found", { status: 404 });
+  return Response.json({ liked: false, likes: post.likes.length });
+}
+

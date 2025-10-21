@@ -15,6 +15,8 @@
         "./src/*"
       ]
     },
+    "types": ["node"],
+    "noUncheckedIndexedAccess": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,

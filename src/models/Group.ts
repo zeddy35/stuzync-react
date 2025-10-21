@@ -6,6 +6,7 @@ export interface IGroup {
   name: string;
   description?: string;
   visibility: GroupVisibility;
+  avatar?: string;         // square icon
   cover?: string;           // R2 URL
   owner: mongoose.Types.ObjectId; // User
 }
@@ -15,6 +16,7 @@ const groupSchema = new Schema<IGroup>(
     name: { type: String, required: true, trim: true },
     description: String,
     visibility: { type: String, enum: ["public", "private"], default: "public", index: true },
+    avatar: String,
     cover: String,
     owner: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
   },

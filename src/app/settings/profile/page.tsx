@@ -1,62 +1,67 @@
-﻿// src/app/settings/profile/page.tsx
 export const dynamic = "force-dynamic";
+
+import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { dbConnect } from "@/lib/db";
 import User from "@/models/User";
+import AutoImageUpload from "@/components/AutoImageUpload";
+import SettingsProfileForm from "@/components/SettingsProfileForm";
 
-export default async function SettingsProfilePage() {
+export default async function SettingsProfilePage({
+  searchParams,
+}: {
+  searchParams?: { updated?: string };
+}) {
   const session = await getServerSession(authOptions);
+  if (!session?.user) redirect("/login");
+
   await dbConnect();
-  const user = session?.user
-    ? await User.findById((session as any).user.id).select("firstName lastName school phone").lean()
-    : null;
+  const user = await User.findById((session as any).user.id)
+    .select("firstName lastName school phone profilePic profileBanner bio skills interests")
+    .lean();
+
+  const updated = searchParams?.updated === "1";
 
   return (
     <div className="page-wrap py-8">
       <h1 className="text-2xl font-semibold mb-4">Profile Settings</h1>
 
+      {updated && (
+        <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/40 dark:text-emerald-200">
+          Saved
+        </div>
+      )}
+
       <div className="grid gap-6 md:grid-cols-2">
-        <form action="/api/profile" method="POST" className="section-card space-y-4">
-          <div>
-            <label className="label" htmlFor="firstName">First name</label>
-            <input className="input" id="firstName" name="firstName" defaultValue={(user as any)?.firstName || ""} required />
-          </div>
-          <div>
-            <label className="label" htmlFor="lastName">Last name</label>
-            <input className="input" id="lastName" name="lastName" defaultValue={(user as any)?.lastName || ""} required />
-          </div>
-          <div>
-            <label className="label" htmlFor="school">School</label>
-            <input className="input" id="school" name="school" defaultValue={(user as any)?.school || ""} />
-          </div>
-          <div>
-            <label className="label" htmlFor="phone">Phone</label>
-            <input className="input" id="phone" name="phone" defaultValue={(user as any)?.phone || ""} />
-          </div>
-          <button className="btn btn-primary" type="submit">Save</button>
-        </form>
+        {/* Client-side save with toasts */}
+        <SettingsProfileForm
+          defaults={{
+            firstName: (user as any)?.firstName,
+            lastName: (user as any)?.lastName,
+            school: (user as any)?.school,
+            phone: (user as any)?.phone,
+            bio: (user as any)?.bio,
+            skills: (user as any)?.skills,
+            interests: (user as any)?.interests,
+          }}
+        />
 
+        {/* Images - auto upload */}
         <div className="space-y-6">
-          {/* Avatar Upload */}
-          <form action="/api/upload/avatar" method="POST" encType="multipart/form-data" className="section-card space-y-3">
-            <div>
-              <label className="label" htmlFor="avatar">Avatar</label>
-              <input type="file" id="avatar" name="file" accept="image/*" className="text-sm" />
-            </div>
-            <button className="btn btn-ghost" type="submit">Upload avatar</button>
-          </form>
-
-          {/* Banner Upload */}
-          <form action="/api/upload/banner" method="POST" encType="multipart/form-data" className="section-card space-y-3">
-            <div>
-              <label className="label" htmlFor="banner">Banner</label>
-              <input type="file" id="banner" name="file" accept="image/*" className="text-sm" />
-            </div>
-            <button className="btn btn-ghost" type="submit">Upload banner</button>
-          </form>
+          <AutoImageUpload
+            label="Banner"
+            action="/api/upload/banner"
+            initialUrl={(user as any)?.profileBanner}
+          />
+          <AutoImageUpload
+            label="Avatar"
+            action="/api/upload/avatar"
+            initialUrl={(user as any)?.profilePic}
+          />
         </div>
       </div>
     </div>
   );
 }
+

@@ -11,6 +11,7 @@
   }
   html { scroll-behavior: smooth; }
   body { @apply bg-gray-50 text-gray-900 dark:bg-ink-900 dark:text-neutral-100; }
+  .dim body { background-color: #0f1424; color: #e6e8ee; }
   a { @apply text-zync-600 hover:text-zync-500 dark:text-zync-400 dark:hover:text-zync-300; }
 }
 
@@ -39,12 +40,14 @@
 /* ---------- Components ---------- */
 @layer components {
   .card { @apply bg-white/80 dark:bg-ink-800/70 backdrop-blur border border-white/50 dark:border-white/10 rounded-2xl shadow-soft; }
+  .dim .card { background-color: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08); }
 
   .btn { @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-medium transition active:scale-[.99]; }
   .btn-primary {
     background: linear-gradient(135deg, var(--z-a), var(--z-b));
     @apply text-white shadow-soft;
   }
+  .dim .btn-primary { filter: saturate(.9); }
   .btn-primary:hover { filter: brightness(1.05); }
   .btn-ghost { @apply border border-gray-300 dark:border-white/15 hover:bg-gray-50/80 dark:hover:bg-ink-800; }
   .icon-btn { @apply btn btn-ghost h-9 px-3; }
@@ -90,6 +93,13 @@
 
   .chip { @apply text-xs px-2 py-1 rounded-full bg-neutral-900/5 dark:bg-white/10; }
 }
+
+/* Hide sidebars on auth/landing routes without breaking server components */
+.no-shell .app-shell-left,
+.no-shell .app-shell-right { display: none !important; }
+.no-shell .app-shell-main { grid-column: 1 / -1 !important; }
+.no-shell .app-fallback { display: none !important; }
+
 
 /* ---------- Flash toasts ---------- */
 .toast { @apply fixed top-20 right-4 z-[60] px-4 py-2 rounded-xl text-sm shadow-soft; }

@@ -1,53 +1,36 @@
-﻿import { dbConnect } from "@/lib/db";
-import User from "@/models/User";
+﻿export const runtime = "nodejs";
+
+import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { dbConnect } from "@/lib/db";
+import User from "@/models/User";
 
-async function readInput(req: Request) {
-  const ct = req.headers.get("content-type") || "";
-  if (ct.includes("application/json")) {
-    const b = await req.json().catch(() => ({} as any));
-    return {
-      firstName: (b.firstName || "").trim(),
-      lastName: (b.lastName || "").trim(),
-      school: (b.school || "").trim(),
-      phone: (b.phone || "").trim(),
-    };
-  }
-  const form = await req.formData();
-  return {
-    firstName: String(form.get("firstName") || "").trim(),
-    lastName: String(form.get("lastName") || "").trim(),
-    school: String(form.get("school") || "").trim(),
-    phone: String(form.get("phone") || "").trim(),
-  };
-}
-
-export async function GET() {
+// Türkçe: Profil güncelleme ucu (yalnızca PATCH). JSON gövde bekler.
+export async function PATCH(req: Request) {
   const session = await getServerSession(authOptions);
-  if (!session?.user) return new Response("Unauthorized", { status: 401 });
-  await dbConnect();
-  const user = await User.findById((session as any).user.id)
-    .select("firstName lastName school phone email profilePic profileBanner mustCompleteProfile")
-    .lean();
-  if (!user) return new Response("Not found", { status: 404 });
-  return Response.json({ ok: true, user });
-}
+  if (!session?.user) return NextResponse.json({ ok: false, mesaj: "Yetkisiz erişim" }, { status: 401 });
 
-export async function POST(req: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) return new Response("Unauthorized", { status: 401 });
   await dbConnect();
 
-  const { firstName, lastName, school, phone } = await readInput(req);
-  if (!firstName && !lastName && !school && !phone) return new Response("No changes", { status: 400 });
+  const body = await req.json().catch(() => ({}));
+  const {
+    firstName = "", lastName = "", school = "",
+    bio = "", skills = [], interests = [],
+    avatarUrl, bannerUrl, mustCompleteProfile,
+  } = body || {};
 
-  await User.findByIdAndUpdate((session as any).user.id, {
-    ...(firstName ? { firstName } : {}),
-    ...(lastName ? { lastName } : {}),
-    ...(school ? { school } : {}),
-    ...(phone ? { phone } : {}),
-  });
+  const update: any = { firstName, lastName, school, bio, skills, interests };
+  if (typeof avatarUrl === "string") update.profilePic = avatarUrl;
+  if (typeof bannerUrl === "string") update.profileBanner = bannerUrl;
+  if (mustCompleteProfile === false) update.mustCompleteProfile = false;
 
-  return Response.json({ ok: true });
+  const user = await User.findByIdAndUpdate(
+    (session as any).user.id,
+    { $set: update },
+    { new: true, runValidators: true }
+  ).lean();
+
+  if (!user) return NextResponse.json({ ok: false, mesaj: "Kullanıcı bulunamadı" }, { status: 404 });
+  return NextResponse.json({ ok: true, user });
 }

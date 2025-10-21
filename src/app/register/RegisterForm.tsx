@@ -1,0 +1,171 @@
+"use client";
+
+// Türkçe: OAuth prefill ile gelen kayıt tamamlama formu (client component).
+// URL'den gelen "oauth", "name", "email" parametrik olarak server page'den gelir.
+
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+
+type Props = { oauth: boolean; name: string; email: string };
+
+export default function RegisterForm({ oauth, name, email }: Props) {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  const [firstName, setFirst]   = useState("");
+  const [lastName, setLast]     = useState("");
+  const [bio, setBio]           = useState("");
+  const [skills, setSkills]     = useState("");
+  const [interests, setInterests] = useState("");
+  const [avatarUrl, setAvatar]  = useState("");
+  const [bannerUrl, setBanner]  = useState("");
+  const [loading, setLoading]   = useState(false);
+  const [upLoading, setUpLoading] = useState<null | "avatar" | "banner">(null);
+
+  // Türkçe: Ad/soyad ön-doldurma
+  useEffect(() => {
+    if (name) {
+      const [f, ...rest] = name.trim().split(/\s+/);
+      setFirst(f || "");
+      setLast(rest.join(" "));
+    }
+  }, [name]);
+
+  // Türkçe: Profil tamam ise feed'e yönlendir
+  useEffect(() => {
+    if (status === "authenticated" && !(session as any)?.user?.mustCompleteProfile) {
+      router.replace("/feed");
+    }
+  }, [status, session, router]);
+
+  const disabled = useMemo(() => !firstName.trim() || !lastName.trim() || loading, [firstName, lastName, loading]);
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+
+    const payload = {
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      bio: bio.trim(),
+      skills: skills.split(",").map(s => s.trim()).filter(Boolean),
+      interests: interests.split(",").map(s => s.trim()).filter(Boolean),
+      avatarUrl: avatarUrl.trim() || undefined,
+      bannerUrl: bannerUrl.trim() || undefined,
+      mustCompleteProfile: false,
+    };
+
+    const r = await fetch("/api/profile", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+    if (!r.ok) { setLoading(false); alert("Kaydetme başarısız oldu."); return; }
+
+    await fetch("/api/auth/session?update", { cache: "no-store" });
+    router.replace("/feed");
+  }
+
+  async function uploadAvatar(file?: File) {
+    if (!file) return "";
+    const fd = new FormData();
+    fd.append("file", file);
+    const r = await fetch("/api/upload/avatar", { method: "POST", body: fd });
+    if (!r.ok) throw new Error("Avatar yükleme hatası");
+    const { url } = await r.json();
+    return url as string;
+  }
+
+  async function uploadBanner(file?: File) {
+    if (!file) return "";
+    const fd = new FormData();
+    fd.append("file", file);
+    const r = await fetch("/api/upload/banner", { method: "POST", body: fd });
+    if (!r.ok) throw new Error("Banner yükleme hatası");
+    const { url } = await r.json();
+    return url as string;
+  }
+
+  return (
+    <section className="page-wrap py-10">
+      <div className="section-card max-w-2xl mx-auto">
+        <h1 className="text-2xl font-semibold mb-2">Hesabı Tamamla (OAuth)</h1>
+        <p className="muted mb-4">{oauth ? "Bilgilerin ön-dolduruldu, eksikleri tamamla." : "OAuth bilgisi bulunamadı."}</p>
+
+        <form onSubmit={onSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-2">
+            <div><label className="label">Ad</label><input className="input" value={firstName} onChange={e=>setFirst(e.target.value)} required/></div>
+            <div><label className="label">Soyad</label><input className="input" value={lastName} onChange={e=>setLast(e.target.value)} required/></div>
+          </div>
+
+          <div><label className="label">E-posta</label><input className="input bg-gray-100" value={email} readOnly/></div>
+
+          <div><label className="label">Biyografi (opsiyonel)</label><textarea className="input min-h-[96px]" value={bio} onChange={e=>setBio(e.target.value)} /></div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div><label className="label">Yetenekler (virgülle)</label><input className="input" placeholder="react, node, ui/ux" value={skills} onChange={e=>setSkills(e.target.value)} /></div>
+            <div><label className="label">İlgi alanları (virgülle)</label><input className="input" placeholder="spor, müzik, yapay zeka" value={interests} onChange={e=>setInterests(e.target.value)} /></div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="label">Avatar (dosya yükle)</label>
+              <input
+                className="input"
+                type="file"
+                accept="image/*"
+                onChange={async (e) => {
+                  const f = e.target.files?.[0];
+                  if (!f) return;
+                  try {
+                    setUpLoading("avatar");
+                    const url = await uploadAvatar(f);
+                    setAvatar(url);
+                  } finally {
+                    setUpLoading(null);
+                  }
+                }}
+              />
+              <input
+                className="input mt-2"
+                placeholder="https://cdn.../avatar.webp"
+                value={avatarUrl}
+                onChange={(e) => setAvatar(e.target.value)}
+              />
+              {upLoading==="avatar" && <p className="muted text-sm mt-1">Yükleniyor…</p>}
+            </div>
+            <div>
+              <label className="label">Banner (dosya yükle)</label>
+              <input
+                className="input"
+                type="file"
+                accept="image/*"
+                onChange={async (e) => {
+                  const f = e.target.files?.[0];
+                  if (!f) return;
+                  try {
+                    setUpLoading("banner");
+                    const url = await uploadBanner(f);
+                    setBanner(url);
+                  } finally {
+                    setUpLoading(null);
+                  }
+                }}
+              />
+              <input
+                className="input mt-2"
+                placeholder="https://cdn.../banner.webp"
+                value={bannerUrl}
+                onChange={(e) => setBanner(e.target.value)}
+              />
+              {upLoading === "avatar" && <p className="muted text-sm mt-1">Avatar yükleniyor…</p>}
+              {upLoading === "banner" && <p className="muted text-sm mt-1">Banner yükleniyor…</p>}
+            </div>
+          </div>
+
+          <button className="btn btn-primary w-full" disabled={disabled}>
+            {loading ? "Kaydediliyor…" : "Kaydet ve Devam"}
+          </button>
+        </form>
+      </div>
+    </section>
+  );
+}
+

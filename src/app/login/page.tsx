@@ -3,8 +3,11 @@
 import { useState, useTransition } from "react";
 import { signIn } from "next-auth/react";
 import OAuthButtons from "@/components/OAuthButtons";
+import { useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
+  const sp = useSearchParams();
+  const next = sp.get("next") || "/feed";
   const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
   const [error, setError]       = useState<string | null>(null);
@@ -23,7 +26,7 @@ export default function LoginPage() {
       if (res?.error) {
         setError(res.error);
       } else {
-        window.location.href = "/"; // istersen /feed
+        window.location.href = next; 
       }
     });
   };
@@ -34,7 +37,7 @@ export default function LoginPage() {
         <h1 className="text-2xl font-semibold mb-1">Welcome back</h1>
         <p className="muted mb-4">E-mail + password veya Google/LinkedIn ile giriş yap.</p>
 
-        <OAuthButtons />
+        <OAuthButtons callbackUrl={next} />
         <div className="divider my-4" />
 
         <form onSubmit={onSubmit} className="space-y-4">

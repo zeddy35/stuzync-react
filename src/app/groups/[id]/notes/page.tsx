@@ -13,7 +13,7 @@ export default async function GroupNotesPage({ params }: { params: { id: string 
         <div key={n._id} className="section-card p-4">
           <div className="flex items-center gap-2 text-sm">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className="h-6 w-6 rounded-full" src={n.author?.profilePic || "/images/avatar-fallback.png"} alt="" />
+            <img className="h-6 w-6 rounded-full" src={n.author?.profilePic || "/images/avatar-fallback.svg"} alt="" />
             <b>{n.author?.name || "User"}</b>
             <span className="text-neutral-500">· {new Date(n.createdAt).toLocaleString()}</span>
           </div>

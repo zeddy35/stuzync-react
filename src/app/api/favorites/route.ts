@@ -1,5 +1,5 @@
 // src/app/api/favorites/route.ts
-import { getServerSession } from "next-auth/next";
+import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { dbConnect } from "@/lib/db";
 import User from "@/models/User";
