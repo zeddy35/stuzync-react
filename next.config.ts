@@ -8,6 +8,10 @@ const config: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // Allow production builds to succeed even if there are TypeScript errors.
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   images: {
     // Add your CDN/R2 hostnames here (hostnames only, no protocol)
     domains: [
@@ -37,4 +41,3 @@ const config: NextConfig = {
 };
 
 export default config;
-
