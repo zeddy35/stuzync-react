@@ -1,4 +1,4 @@
-// src/app/api/groups/[id]/chat/route.ts
+ï»¿// src/app/api/groups/[id]/chat/route.ts
 export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from "next/server";
@@ -25,7 +25,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
     const groupId = params.id;
     if (!mongoose.isValidObjectId(groupId)) {
-      return NextResponse.json({ ok: false, mesaj: "Geçersiz grup kimligi" }, { status: 400 });
+      return NextResponse.json({ ok: false, mesaj: "Geï¿½ersiz grup kimligi" }, { status: 400 });
     }
 
     await dbConnect();
@@ -37,7 +37,12 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
     // Pagination
     const { searchParams } = new URL(req.url);
-    const limit = Math.min(Number(searchParams.get("limit") || 30), 100);
+    const rawLimit = Number(searchParams.get("limit"));
+    let limit = 30;
+    if (Number.isFinite(rawLimit)) {
+      const clamped = Math.max(1, Math.min(100, Math.floor(rawLimit)));
+      limit = clamped;
+    }
     const cursor = searchParams.get("cursor"); // ISO date veya createdAt deÄŸeri
 
     const q: any = { group: groupId };
@@ -79,7 +84,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
     const groupId = params.id;
     if (!mongoose.isValidObjectId(groupId)) {
-      return NextResponse.json({ ok: false, mesaj: "Geçersiz grup kimligi" }, { status: 400 });
+      return NextResponse.json({ ok: false, mesaj: "Geï¿½ersiz grup kimligi" }, { status: 400 });
     }
 
     await dbConnect();
@@ -89,7 +94,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const text = raw.replace(/\s+/g, " "); // basit normalize
 
     if (!text) return NextResponse.json({ ok: false, mesaj: "Mesaj metni gerekli" }, { status: 400 });
-    if (text.length > 4000) return NextResponse.json({ ok: false, mesaj: "Mesaj çok uzun (max 4000)" }, { status: 413 });
+    if (text.length > 4000) return NextResponse.json({ ok: false, mesaj: "Mesaj ï¿½ok uzun (max 4000)" }, { status: 413 });
 
     // Ãœyelik kontrolÃ¼
     const me = (session as any).user.id as string;
