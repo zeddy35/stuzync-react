@@ -55,9 +55,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={`${inter.className} min-h-full bg-gray-50 text-neutral-900 dark:bg-[#0b1020] dark:text-neutral-100`}>
         <Providers>
-          <ShellController />
-          <MobileTopBar />
-          <Toast />
+          <Suspense fallback={null}>
+            <ShellController />
+          </Suspense>
+          <Suspense fallback={null}>
+            <MobileTopBar />
+          </Suspense>
+          <Suspense fallback={null}>
+            <Toast />
+          </Suspense>
 
           {/* 3-column app layout */}
           <div className="mx-auto max-w-[1280px] px-4 grid grid-cols-12 gap-4 mt-4 mb-12 app-shell-grid">
