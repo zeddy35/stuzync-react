@@ -8,7 +8,7 @@ const config: NextConfig = {
     // Türkçe: Kendi CDN domain(ler)inizi buraya ekleyin.
     domains: [
       'cdn.stuzync.com', // [CDN_DOMAIN] - kendinize göre değiştirin
-      'YOUR_R2_ACCOUNT_ID.r2.cloudflarestorage.com',
+      'https://0990e9455341062a6d208e78963c01f7.r2.cloudflarestorage.com',
     ],
   },
   async headers() {

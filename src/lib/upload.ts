@@ -10,9 +10,13 @@ function readEnv() {
     R2_BUCKET,
     R2_PUBLIC_BASE,
     R2_PUBLIC_CDN_BASE,
+    // Uyum: .env.local içinde R2_PUBLIC_BASE_URL kullanılıyor olabilir
+    R2_PUBLIC_BASE_URL,
   } = process.env as Record<string, string | undefined>;
   if (!R2_ACCOUNT_ID || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY || !R2_BUCKET) return null;
-  return { R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET, R2_PUBLIC_BASE, R2_PUBLIC_CDN_BASE } as const;
+  // R2_PUBLIC_BASE_URL varsa CDN/base alanı olarak kabul et
+  const CDN_BASE = R2_PUBLIC_CDN_BASE || R2_PUBLIC_BASE_URL;
+  return { R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET, R2_PUBLIC_BASE, R2_PUBLIC_CDN_BASE: CDN_BASE } as const;
 }
 
 let s3: S3Client | null = null;
